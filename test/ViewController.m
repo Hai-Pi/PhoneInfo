@@ -47,9 +47,9 @@ int K_COUNTDOWN = 15;
         double z = accelerometerData.acceleration.z;
 
         if (fabs(x)>2.0 ||fabs(y)>2.0 ||fabs(z)>2.0) {
-            NSLog(@"检测到晃动");
+//            NSLog(@"检测到晃动");
         }
-        NSLog(@"CoreMotionManager, x: %f,y: %f, z: %f",x,y,z);
+//        NSLog(@"CoreMotionManager, x: %f,y: %f, z: %f",x,y,z);
     }];
 }
 
@@ -141,7 +141,7 @@ int K_COUNTDOWN = 15;
     NSDictionary *exifMetadata = [[metadata objectForKey:(NSString *)kCGImagePropertyExifDictionary] mutableCopy];
     float brightnessValue = [[exifMetadata objectForKey:(NSString *)kCGImagePropertyExifBrightnessValue] floatValue];
 
-    NSLog(@"%f",brightnessValue);
+//    NSLog(@"%f",brightnessValue);
 
 
     // 根据brightnessValue的值来打开和关闭闪光灯
