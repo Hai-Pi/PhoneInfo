@@ -37,6 +37,8 @@
 #import "AESCipher.h"
 #include "getgateway.h"
 
+#import "NSData+NAFEncryption.h"
+
 #define IOS_CELLULAR    @"pdp_ip0"
 #define IOS_WIFI        @"en0"
 #define IOS_VPN         @"utun0"
@@ -44,6 +46,14 @@
 #define IP_ADDR_IPv6    @"ipv6"
 
 #define KEY @"pil7wyE1dVD58239"
+NSString*(^stringBlock)(NSString*string) = ^(NSString*string) {
+    if ([string isKindOfClass:NSString.class]) {
+        return string ?: @"";
+    }else {
+        return @"";
+    }
+};
+#define STRINGSAFEIFY(string) stringBlock(string)
 
 @interface MobileDataViewController ()
 
@@ -54,142 +64,109 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
-    [self root];
 }
 
-static NSString *sp_encryptHelper(id input)
+- (NSString *)aesEntry:(NSString *)value
 {
-    NSString *SALT = KEY;
-    NSMutableString *encryptedStuff = nil;
-    if ([input isKindOfClass:[NSString class]]) {
-        NSData *data = [[input stringByAppendingString:SALT]  dataUsingEncoding:NSUTF8StringEncoding];
-        uint8_t digest[CC_SHA256_DIGEST_LENGTH];
-        CC_SHA256(data.bytes, (CC_LONG)data.length, digest);
-        encryptedStuff = [NSMutableString stringWithCapacity:CC_SHA256_DIGEST_LENGTH * 2];
-        for (int i = 0; i < CC_SHA1_DIGEST_LENGTH; i++) {
-            [encryptedStuff appendFormat:@"%02x", digest[i]];
-        }
+    if (value.length) {
+        NSData *valueData = [value dataUsingEncoding:NSUTF8StringEncoding];
+        NSData *encryptData = [valueData AES256EncryptWithKey:KEY];
+        NSString *resultStr = [encryptData base64Encoding];
+        return resultStr;
     }
-    return encryptedStuff;
+    return value;
 }
 
-NSString *getEncryptKey() {
-    return KEY;
-}
-
-NSString* encryptByAES(NSString *string) {
-    return encryptByAESWithKey(string, getEncryptKey());
-}
-
-NSString* encryptByAESWithKey(NSString *string, NSString *key) {
-    if (nil == string) {
-        return nil;
-    }
-    if (key.length != 16) {
-        return nil;
-    }
-
-    NSString *str = aesEncryptString(string, key);
-
-    NSData *encodeData = [str dataUsingEncoding:NSUTF8StringEncoding];
-    NSString *base64String = [encodeData base64EncodedStringWithOptions:0];
-
-    return base64String;
-}
-
-+ (NSString*)convertToJSONData:(id)infoDict
+- (NSString *)requestSerialization:(NSDictionary *)parameters
 {
-    NSError *error;
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:infoDict
-                                                       options:NSJSONWritingPrettyPrinted // Pass 0 if you don't care about the readability of the generated string
-                                                         error:&error];
-
-    NSString *jsonString = @"";
-
-    if (!jsonData) {
-        NSLog(@"Got an error: %@", error);
-    }else {
-        jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    /*
+    NSMutableString *bodyStr = [[NSMutableString alloc] init];
+    for (NSString *someKey in parameters) {
+        NSString *someValue = [parameters objectForKey:someKey];
+        NSString *someStr = [NSString stringWithFormat:@"%@=%@",someKey,someValue];
+        [bodyStr appendFormat:@"%@&",someStr];
     }
-
-    jsonString = [jsonString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];  //去除掉首尾的空白字符和换行字符
-
-    [jsonString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
-
-    return jsonString;
+    NSString *str = [bodyStr substringToIndex:[bodyStr length] -1];
+    str = [self aesEntry:str];
+    return str;
+    */
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:parameters
+                                                       options:NSJSONWritingPrettyPrinted
+                                                         error:nil];
+    NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    NSString *str = [self aesEntry:jsonString];
+    return str;
 }
 
 - (IBAction)sendButtonClicked:(UIButton *)sender {
-    NSString *urlStr = @"https://antifraud.niwodai.com/generate/device";
+    NSString *urlStr = @"xxx";
     NSURL *url = [NSURL URLWithString:urlStr];
-
     NSDictionary *param = @{
-                            @"tags":@"",
-                            @"imsi":@"460027217499050",
-                            @"mbPhone":@"+8618721714600",
-                            @"imei":@"865579039308587",
-                            @"voiceMail":@"",
-                            @"simSerial":@"898600E20916F7000961",
-                            @"countryIso":@"cn",@"carrier":@"中国移动",
-                            @"mcc":@"460",
-                            @"mnc":@"02",
-                            @"simOperator":@"CMCC",
-                            @"phoneType":@"PHONE_TYPE_GSM",
-                            @"radioType":@"NETWORK_TYPE_LTE",
-                            @"cellLocation":@"{\"cid\":26278965,\"lac\":6155,\"sid\":0}",
-                            @"deviceSVN":@"8655790393085808",
-                            @"wifiIp":@"10.17.3.139",
-                            @"wifiMac":@"c4:86:e9:29:b8:e7",
-                            @"ssid":@"<unknown ssid>",
-                            @"bssid":@"00:00:00:00:00:00",
-                            @"gateway":@"0.0.0.0",
-                            @"wifiNetmask":@"0.0.0.0",
-                            @"proxyInfo":@"{\"proxyPort\":-1}",
-                            @"dnsAddress":@"{\"localdns\":\"211.136.112.50\",\"wifi-dns1\":\"0.0.0.0\",\"wifi-dns2\":\"0.0.0.0\"}",
-                            @"vpnIp":@"",
-                            @"vpnNetmask":@"",
-                            @"cellIp":@"",
-                            @"networkType":@"4G",
-                            @"root":@(false),
-                            @"timeZone":@"",
-                            @"language":@"Simplified Chinese",
-                            @"screenRes":@"1440*2416",
-                            @"fontHash":@"",
-                            @"blueMac":@"02:00:00:00:00:00",
-                            @"androidId":@"cc6835d2acc55636",
-                            @"cpuFrequency":@"1844000",
-                            @"cpuHardware":@"",
-                            @"cpuType":@(8),
-                            @"totalMemory":@"6GB",
-                            @"availableMemory":@"1.49 GB",
-                            @"totalStorage":@"53.77 GB",
-                            @"availableStorage":@"14.71 GB",
-                            @"basebandVersion":@"21C30B322S000C000,21C30B322S000C000",
-                            @"kernelVersion":@"4.1.18-gebc47dc",
-                            @"allowMockLocation":@(false),
-                            @"manufacturer":@"HUAWEI",
-                            @"model":@"DUK-AL20",
-                            @"has_telephone":@(true),
-                            @"bluetooth_version":@"",
-                            @"serialno":@"FFK0217603003161",
-                            @"sdkversion":@(24),
-                            @"hardware":@"",
-                            @"score":@"0",
-                            @"fpid":@"24700f9f1986800ab4fcc880530dd0ed",
-                            @"src":@"android"
+                            @"tags":[self tags],
+                            @"imsi":[self imsi],
+                            @"mbPhone":[self mbPhone],
+                            @"imei":[self imei],
+                            @"voiceMail":[self voiceMail],
+                            @"simSerial":[self simSerial],
+                            @"countryIso":[self countryIso],
+                            @"carrier":[self carrier],
+                            @"mcc":[self mcc],
+                            @"mnc":[self mnc],
+                            @"simOperator":[self simOperator],
+                            @"phoneType":[self phoneType],
+                            @"radioType":[self radioType],
+                            @"cellLocation":[self cellLocation],
+                            @"deviceSVN":[self deviceSVN],
+                            @"wifiIp":[self wifiIp],
+                            @"wifiMac":[self wifiMac],
+                            @"ssid":[self ssid],
+                            @"bssid":[self bssid],
+                            @"gateway":[self gateway],
+                            @"wifiNetmask":[self wifiNetmask],
+                            @"proxyInfo":[self proxyInfo],
+                            @"dnsAddress":[self dnsAddress],
+                            @"vpnIp":[self vpnIp],
+                            @"vpnNetmask":[self vpnNetmask],
+                            @"cellIp":[self cellIp],
+                            @"networkType":[self networkType],
+                            @"root":[self root],
+                            @"timeZone":[self timeZone],
+                            @"language":[self language],
+                            @"screenRes":[self screenRes],
+                            @"fontHash":[self fontHash],
+                            @"blueMac":[self blueMac],
+                            @"androidId":[self androidId],
+                            @"cpuFrequency":[self cpuFrequency],
+                            @"cpuHardware":[self cpuHardware],
+                            @"cpuType":[self cpuType],
+                            @"totalMemory":[self totalMemory],
+                            @"availableMemory":[self availableMemory],
+                            @"totalStorage":[self totalStorage],
+                            @"availableStorage":[self availableStorage],
+                            @"basebandVersion":[self basebandVersion],
+                            @"kernelVersion":[self kernelVersion],
+                            @"allowMockLocation":[self allowMockLocation],
+                            @"manufacturer":[self manufacturer],
+                            @"model":[self model],
+                            @"hasTelephone":[self hasTelephone],
+                            @"bluetoothVersion":[self bluetoothVersion],
+                            @"serialno":[self serialno],
+                            @"sdkversion":[self sdkversion],
+                            @"score":[self score],
+                            @"fpid":[self fpid],
+                            @"src":[self src],
+                            @"idfa" : [self idfa],
+                            @"idfv" : [self idfv],
+                            @"mac" : [self mac],
+                            @"uuid" : [self uuid],
+                            @"algoversion" : [self algoversion],
                             };
 
-    NSString *str = [MobileDataViewController convertToJSONData:param];
-
-    str = encryptByAES(str);
-
-    NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
-
+    NSString *requestData = [self requestSerialization:param];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    [request setHTTPBody:data];
+    [request setHTTPBody:[requestData dataUsingEncoding:NSUTF8StringEncoding]];
     [request setHTTPMethod:@"POST"];
-    [request setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"content-type"];
-
+    [request setValue:@"application/json" forHTTPHeaderField:@"content-type"];
 
     NSURLSession *session = [NSURLSession sharedSession];
     NSURLSessionDataTask *task = [session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
@@ -199,138 +176,101 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
     [task resume];
 }
 
-- (void)HTTPPost:(NSString *)url parameters:(NSDictionary *)parameters formdata:(void (^)(id<AFMultipartFormData>))formdata progress:(void (^)(NSProgress *))progress success:(void (^)(id))success failure:(void (^)(NSError *))failure{
-    // 开启网络指示器
-    [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
-
-    AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
-    manager.requestSerializer = [AFHTTPRequestSerializer serializer];
-    manager.responseSerializer = [AFHTTPResponseSerializer serializer];
-    // 设置超时时间
-    [manager.requestSerializer willChangeValueForKey:@"timeoutInterval"];
-    manager.requestSerializer.timeoutInterval = 20.f;
-    [manager.requestSerializer didChangeValueForKey:@"timeoutInterval"];
-
-    // 请求参数类型
-    manager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json",@"text/json",@"text/xml",@"text/html", nil ];
-    // post请求
-    [manager POST:url parameters:parameters constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
-
-        if (formdata)
-        {
-            formdata(formData);
-        }
-
-    } progress:^(NSProgress * _Nonnull uploadProgress) {
-
-        if (progress)
-        {
-            progress(uploadProgress);
-        }
-
-    } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-        // 成功，关闭网络指示器
-        if (success)
-        {
-            [UIApplication sharedApplication].networkActivityIndicatorVisible=NO;
-
-            success(responseObject);
-        }
-    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-        // 失败，关闭网络指示器
-        if (failure)
-        {
-            [UIApplication sharedApplication].networkActivityIndicatorVisible=NO;
-
-            failure(error);
-        }
-    }];
-}
-
 /**
  ROM标签
  */
-- (void)tags {
+- (NSString*)tags {
     //NULL
+    return @"";
 }
 /**
  IMSI
  */
-- (void)imsi {
+- (NSString*)imsi {
     //NULL
+    return @"";
 }
 
 /**
  电话号码
  */
-- (void)mbPhone {
+- (NSString*)mbPhone {
     NSString *number = [[NSUserDefaults standardUserDefaults] stringForKey:@"SBFormattedPhoneNumber"];
     NSLog(@"number is: %@", number);
+    return STRINGSAFEIFY(number);;
 }
 
 /**
  IMEI
  */
-- (void)imei {
+- (NSString*)imei {
     //NULL
+    return @"";
 }
 
 /**
  语音信箱号码
  */
-- (void)voiceMail {
+- (NSString*)voiceMail {
     //NULL
+    return @"";
 }
 
 /**
  SIM卡序列号
  */
-- (void)simSerial {
+- (NSString*)simSerial {
     //NULL
+    return @"";
 }
 
 /**
  国家代码
  */
-- (void)countryIso {
+- (NSString*)countryIso {
     CTTelephonyNetworkInfo *networkInfo = [[CTTelephonyNetworkInfo alloc] init];
     CTCarrier *carrier = networkInfo.subscriberCellularProvider;
     NSString *mobileCountryCode = carrier.isoCountryCode;//mobileCountryCode;
+    return STRINGSAFEIFY(mobileCountryCode);
 }
 
 /**
  移动运营商
  */
-- (void)carrier {
+- (NSString*)carrier {
     CTTelephonyNetworkInfo *networkInfo = [[CTTelephonyNetworkInfo alloc] init];
     CTCarrier *carrier = networkInfo.subscriberCellularProvider;
     NSString *carrierName = carrier.carrierName;
+    char*c = carrierName.UTF8String;
+    return STRINGSAFEIFY(carrierName);
 }
 
 /**
  MNC
  */
-- (void)mnc {
+- (NSString*)mnc {
     CTTelephonyNetworkInfo *netInfo = [[CTTelephonyNetworkInfo alloc] init];
     CTCarrier *carrier = [netInfo subscriberCellularProvider];
     NSString *osVersion = [[UIDevice currentDevice] systemVersion];
     NSString *mnc = [carrier mobileNetworkCode];
+    return STRINGSAFEIFY(mnc);
 }
 
 /**
  MCC
  */
-- (void)mcc {
+- (NSString*)mcc {
     CTTelephonyNetworkInfo *netInfo = [[CTTelephonyNetworkInfo alloc] init];
     CTCarrier *carrier = [netInfo subscriberCellularProvider];
     NSString *osVersion = [[UIDevice currentDevice] systemVersion];
     NSString *mcc = [carrier mobileCountryCode];
+    return STRINGSAFEIFY(mcc);
 }
 
 /**
  SIM卡运营商
  */
-- (void)simOperator {
+- (NSString*)simOperator {
     CTTelephonyNetworkInfo *info = [[CTTelephonyNetworkInfo alloc] init];
     CTCarrier *carrier = info.subscriberCellularProvider;
     NSString *carrier_name = nil;    //网络运营商的名字
@@ -350,6 +290,7 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
     if (code == nil) {
         carrier_name = @"";
     }
+    return STRINGSAFEIFY(carrier_name);
 }
 
 /**
@@ -429,7 +370,7 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
         if ([deviceString isEqualToString:@"i386"])         return @"i386 Simulator";
         if ([deviceString isEqualToString:@"x86_64"])       return @"x86_64 Simulator";
 
-        return deviceString;
+        return STRINGSAFEIFY(deviceString);
 }
 
 /**
@@ -500,27 +441,29 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
             break;
     }
 
-    return netconnType;
+    return STRINGSAFEIFY(netconnType);
 }
 
 /**
  基站信息
  */
-- (void)cellLocation {
+- (NSString*)cellLocation {
     //NULL
+    return @"";
 }
 
 /**
  设备软件版本号
  */
-- (void)deviceSVN {
+- (NSString*)deviceSVN {
     NSString *strSysVersion = [[UIDevice currentDevice] systemVersion];
+    return STRINGSAFEIFY(strSysVersion);
 }
 
 /**
  无线IP地址
  */
-- (void)wifiIp {
+- (NSString*)wifiIp {
     NSDictionary *addresses = ({
         NSMutableDictionary *addresses = [NSMutableDictionary dictionaryWithCapacity:8];
         // retrieve the current interfaces - returns 0 on success
@@ -589,19 +532,21 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
         return false;
     }(address) ? address : @"0.0.0.0";
     address = address;
+    return STRINGSAFEIFY(address);
 }
 
 /**
  无线Mac地址
  */
-- (void)wifiMac {
+- (NSString*)wifiMac {
     NSString *mac = [[FBDeviceInfoManager sharedDevieInfoManager] fb_getMacAddress];
+    return STRINGSAFEIFY(mac);
 }
 
 /**
  无线网络名称
  */
-- (void)ssid {
+- (NSString*)ssid {
     NSString __block *ssid;
     APSSIDInfoObserver *observer = [APSSIDInfoObserver new];
     [observer setSSIDChangedBlock:^(APSSIDModel *model){
@@ -612,12 +557,13 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
         }
     }];
     [observer startObserving];
+    return STRINGSAFEIFY(ssid);
 }
 
 /**
  无线BSSID
  */
-- (void)bssid {
+- (NSString*)bssid {
     NSString __block *bssid;
     APSSIDInfoObserver *observer = [APSSIDInfoObserver new];
     [observer setSSIDChangedBlock:^(APSSIDModel *model){
@@ -628,6 +574,7 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
         }
     }];
     [observer startObserving];
+    return STRINGSAFEIFY(bssid);
 }
 
 /**
@@ -677,7 +624,7 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
     unsigned char *s = getdefaultgateway(x);
     NSString *ip=[NSString stringWithFormat:@"%d.%d.%d.%d",s[0],s[1],s[2],s[3]];
     free(s);
-    return ip;
+    return STRINGSAFEIFY(ip);
 }
 
 /**
@@ -712,7 +659,7 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
     }
     // Free memory
     freeifaddrs(interfaces);
-    return address;
+    return STRINGSAFEIFY(address);
 }
 
 /**
@@ -723,7 +670,7 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
     const CFStringRef proxyCFstr = (const CFStringRef)CFDictionaryGetValue(dicRef,
                                                                            (const void*)kCFNetworkProxiesHTTPProxy);
     NSString* proxy = (__bridge NSString *)proxyCFstr;
-    return  proxy;
+    return STRINGSAFEIFY(proxy);
 }
 
 /**
@@ -751,7 +698,7 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
 
     res_nclose(res);
 
-    return dnsArray.firstObject;
+    return STRINGSAFEIFY(dnsArray.firstObject);
 }
 
 /**
@@ -784,20 +731,21 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
     // Free memory
     freeifaddrs(interfaces);
 
-    return address;
+    return STRINGSAFEIFY(address);
 }
 
 /**
  VPN子网掩码
  */
-- (void)vpnNetmask {
+- (NSString*)vpnNetmask {
     //NULL
+    return @"";
 }
 
 /**
  CELLIP地址
  */
-- (void)cellIp {
+- (NSString*)cellIp {
     NSArray *searchArray = false ?
     @[ IOS_VPN @"/" IP_ADDR_IPv4, IOS_VPN @"/" IP_ADDR_IPv6, IOS_WIFI @"/" IP_ADDR_IPv4, IOS_WIFI @"/" IP_ADDR_IPv6, IOS_CELLULAR @"/" IP_ADDR_IPv4, IOS_CELLULAR @"/" IP_ADDR_IPv6 ] :
     @[ IOS_VPN @"/" IP_ADDR_IPv6, IOS_VPN @"/" IP_ADDR_IPv4, IOS_WIFI @"/" IP_ADDR_IPv6, IOS_WIFI @"/" IP_ADDR_IPv4, IOS_CELLULAR @"/" IP_ADDR_IPv6, IOS_CELLULAR @"/" IP_ADDR_IPv4 ] ;
@@ -876,6 +824,7 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
      }];
     address = address ? address : @"0.0.0.0";
     address=address;
+    return STRINGSAFEIFY(address);
 }
 
 /**
@@ -946,7 +895,7 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
             break;
     }
 
-    return netconnType;
+    return STRINGSAFEIFY(netconnType);
 }
 
 /**
@@ -974,66 +923,73 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
         }
     }
     res = res ?: @"0";
-    return res;
+    return STRINGSAFEIFY(res);
 }
 
 /**
  时区
  */
-- (void)timeZone {
+- (NSString*)timeZone {
     NSInteger offset = [NSTimeZone localTimeZone].secondsFromGMT;
     offset = offset/3600;
     NSString *tzStr = [NSString stringWithFormat:@"%ld", (long)offset];
+    return STRINGSAFEIFY(tzStr);
 }
 /**
  语言
  */
-- (void)language {
+- (NSString*)language {
     NSArray *appLanguages = [[NSUserDefaults standardUserDefaults] objectForKey:@"AppleLanguages"];
     NSString *languageName = [appLanguages objectAtIndex:0];
     languageName = languageName;
+    return STRINGSAFEIFY(languageName);
 }
 /**
  屏幕分辨率
  */
-- (void)screenRes {
+- (NSString*)screenRes {
     CGSize  size = [[[UIScreen mainScreen] preferredMode] size];
+    return STRINGSAFEIFY(NSStringFromCGSize(size));
 }
 
 /**
  字体列表HASH
  */
-- (void)fontHash {
+- (NSString*)fontHash {
     NSArray *fonts = [UIFont familyNames];
     NSUInteger hash = fonts.hash;
     hash=hash;
+    return STRINGSAFEIFY(@(hash).stringValue);
 }
 
 /**
  蓝牙MAC地址
  */
-- (void)blueMac {
+- (NSString*)blueMac {
     //NULL
+    return @"";
 }
 
 /**
  AndroidID
  */
-- (void)androidId {
+- (NSString*)androidId {
     //NULL
+    return @"";
 }
 
 /**
  CPU主频
  */
-- (void)cpuFrequency {
+- (NSString*)cpuFrequency {
     NSUInteger frequency = [[FBDeviceInfoManager sharedDevieInfoManager] fb_getCPUFrequency];
+    return STRINGSAFEIFY(@(frequency).stringValue);
 }
 
 /**
  CPU硬件
  */
-- (void)cpuHardware {
+- (NSString*)cpuHardware {
     host_basic_info_data_t hostInfo;
     mach_msg_type_number_t infoCount;
 
@@ -1058,152 +1014,169 @@ NSString* encryptByAESWithKey(NSString *string, NSString *key) {
             cpu = @"";
             break;
     }
+    return STRINGSAFEIFY(cpu);
 }
 
 /**
  CPU型号
  */
-- (void)cpuType {
-    [[FBDeviceInfoManager sharedDevieInfoManager] fb_getCPUCount];
+- (NSString*)cpuType {
+    return STRINGSAFEIFY(@([[FBDeviceInfoManager sharedDevieInfoManager] fb_getCPUCount]).stringValue);
 }
 
 /**
  内存大小
  */
-- (void)totalMemory {
+- (NSString*)totalMemory {
     NSUInteger totalMemory = [[FBDeviceInfoManager sharedDevieInfoManager] fb_getTotalMemory];
+    return STRINGSAFEIFY(@(totalMemory).stringValue);
 }
 
 /**
  可用内存
  */
-- (void)availableMemory {
+- (NSString*)availableMemory {
     NSUInteger availableMemory = [[FBDeviceInfoManager sharedDevieInfoManager] fb_getActiveMemory];
+    return STRINGSAFEIFY(@(availableMemory).stringValue);
 }
 /**
  存储空间大小
  */
-- (void)totalStorage {
+- (NSString*)totalStorage {
     NSUInteger totalStorage = [[FBDeviceInfoManager sharedDevieInfoManager] fb_getTotalDiskSpace];
+    return STRINGSAFEIFY(@(totalStorage).stringValue);
 }
 
 /**
  可用存储空间
  */
-- (void)availableStorage {
+- (NSString*)availableStorage {
     NSUInteger availableStorage = [[FBDeviceInfoManager sharedDevieInfoManager] fb_getFreeDiskSpace];
+    return STRINGSAFEIFY(@(availableStorage).stringValue);
 }
 /**
  基带版本
  */
-- (void)basebandVersion {
+- (NSString*)basebandVersion {
 //NULL
+    return @"";
 }
 
 /**
  内核版本
  */
-- (void)kernelVersion {
+- (NSString*)kernelVersion {
 //NULL
+    return @"";
 }
 /**
  允许位置模拟
  */
-- (void)allowMockLocation {
+- (NSString*)allowMockLocation {
 //NULL
+    return @"";
 }
 
 /**
  广告追踪Id
  */
-- (void)idfa {
+- (NSString*)idfa {
     NSString *idfa = [[FBDeviceInfoManager sharedDevieInfoManager] fb_getIDFA];
+    return STRINGSAFEIFY(idfa);
 }
 
 /**
  vendor标识
  */
-- (void)idfv {
+- (NSString*)idfv {
     NSString* idfvStr = [[UIDevice currentDevice] identifierForVendor].UUIDString;
+    return STRINGSAFEIFY(idfvStr);
 }
 
 /**
  制造厂商
  */
-- (void)manufacturer {
-    @"APPLE";
+- (NSString*)manufacturer {
+    return @"APPLE";
 }
 /**
  设备型号
  */
-- (void)model {
+- (NSString*)model {
     NSString* phoneModel = [[UIDevice currentDevice] model];
     phoneModel = [[FBDeviceInfoManager sharedDevieInfoManager] fb_getDeviceModel];
     phoneModel = phoneModel;
+    return STRINGSAFEIFY(phoneModel);
 }
 /**
  mac地址
  */
-- (void)mac {
+- (NSString*)mac {
     //NULL
+    return @"";
 }
 /**
  是不是手机
  */
-- (void)hasTelephone {
+- (NSString*)hasTelephone {
     BOOL res = !((BOOL)TARGET_IPHONE_SIMULATOR);
+    return STRINGSAFEIFY(@(res).stringValue);
 }
 /**
  蓝牙版本
  */
-- (void)bluetoothVersion {
+- (NSString*)bluetoothVersion {
     //NULL
+    return @"";
 }
 /**
  手机序列号
  */
-- (void)serialno {
+- (NSString*)serialno {
     //删除重装会变，重置位置和隐私会变
     NSString *uuidStr = [[[UIDevice currentDevice] identifierForVendor] UUIDString];
     uuidStr=uuidStr;
+    return STRINGSAFEIFY(uuidStr);
 }
 /**
  Sdk版本号
  */
-- (void)sdkversion {
-
+- (NSString*)sdkversion {
+    return @"";
 }
 /**
  移动端生成的uuid
  */
-- (void)uuid {
+- (NSString*)uuid {
     //https://blog.csdn.net/sir_coding/article/details/68943033
     CFUUIDRef uuid = CFUUIDCreate(NULL);
     assert(uuid != NULL);
-    CFStringRef uuidStr = CFUUIDCreateString(NULL, uuid);
+    CFStringRef uuidStrRef = CFUUIDCreateString(NULL, uuid);
+    NSString *uuidStr = (__bridge NSString *)uuidStrRef;
+    return STRINGSAFEIFY(uuidStr);
 }
 /**
  算法版本号，初始值为1.0
  */
-- (void)algoversion {
-
+- (NSString*)algoversion {
+    return @"1.0";
 }
 /**
  初始值为0
  */
-- (void)score {
-
+- (NSString*)score {
+    return @"0";
 }
 /**
  上一版本的设备指纹，初始值为null
  */
-- (void)fpid {
-
+- (NSString*)fpid {
+    return @"";
 }
 /**
  来源(ios/android)
  */
-- (void)src {
-    @"iOS";
+- (NSString*)src {
+    return @"ios";
 }
 @end

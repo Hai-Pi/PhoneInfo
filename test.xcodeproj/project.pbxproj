@@ -26,6 +26,7 @@
 		F792FE02209C5E2600F82852 /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F792FE01209C5E2600F82852 /* CoreMotion.framework */; };
 		F79853F8206F4E6F00C723CE /* TextFieldViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F79853F7206F4E6F00C723CE /* TextFieldViewController.m */; };
 		F79853FA206F506500C723CE /* 11.png in Resources */ = {isa = PBXBuildFile; fileRef = F79853F9206F4ECB00C723CE /* 11.png */; };
+		F7A351EC20E2420500DC93C2 /* NSData+NAFEncryption.m in Sources */ = {isa = PBXBuildFile; fileRef = F7A351EA20E2420400DC93C2 /* NSData+NAFEncryption.m */; };
 		F7AD5D6920CFA1F800E53E04 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = F7AD5D6120CFA1F800E53E04 /* LICENSE */; };
 		F7AD5D6A20CFA1F800E53E04 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = F7AD5D6220CFA1F800E53E04 /* README.md */; };
 		F7AD5D6B20CFA1F800E53E04 /* FBDeviceInfoManager.m in Sources */ = {isa = PBXBuildFile; fileRef = F7AD5D6520CFA1F800E53E04 /* FBDeviceInfoManager.m */; };
@@ -95,6 +96,8 @@
 		F79853F6206F4E6F00C723CE /* TextFieldViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TextFieldViewController.h; sourceTree = "<group>"; };
 		F79853F7206F4E6F00C723CE /* TextFieldViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TextFieldViewController.m; sourceTree = "<group>"; };
 		F79853F9206F4ECB00C723CE /* 11.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = 11.png; sourceTree = "<group>"; };
+		F7A351EA20E2420400DC93C2 /* NSData+NAFEncryption.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSData+NAFEncryption.m"; sourceTree = "<group>"; };
+		F7A351EB20E2420500DC93C2 /* NSData+NAFEncryption.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSData+NAFEncryption.h"; sourceTree = "<group>"; };
 		F7AD5D6120CFA1F800E53E04 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		F7AD5D6220CFA1F800E53E04 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		F7AD5D6520CFA1F800E53E04 /* FBDeviceInfoManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FBDeviceInfoManager.m; sourceTree = "<group>"; };
@@ -181,6 +184,8 @@
 				F79853F7206F4E6F00C723CE /* TextFieldViewController.m */,
 				F7F4865720CA622500D76D36 /* MobileDataViewController.h */,
 				F7F4865820CA622500D76D36 /* MobileDataViewController.m */,
+				F7A351EB20E2420500DC93C2 /* NSData+NAFEncryption.h */,
+				F7A351EA20E2420400DC93C2 /* NSData+NAFEncryption.m */,
 				F71F3C67200E2EA700EAC5AE /* Products */,
 				F7AD5D6020CFA1F800E53E04 /* FBiOSDeviceInfo */,
 				F772CCA420CFE37B006EFE88 /* MPBluetoothKit */,
@@ -420,6 +425,7 @@
 				F7AD5D6B20CFA1F800E53E04 /* FBDeviceInfoManager.m in Sources */,
 				F7FD320520D9F7C90075F1BA /* AFSecurityPolicy.m in Sources */,
 				F772CCC020CFF169006EFE88 /* APSSIDInfoObserver.m in Sources */,
+				F7A351EC20E2420500DC93C2 /* NSData+NAFEncryption.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

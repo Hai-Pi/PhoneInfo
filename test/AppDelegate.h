@@ -15,3 +15,64 @@
 
 @end
 
+/*
+ tags
+ imsi
+ mbPhone
+ imei
+ voiceMail
+ simSerial
+ countryiso
+ carrier
+ mnc
+ mcc
+ simOperator
+ phoneType
+ radioType
+ cellLocation
+ devicesvn
+ wifiIp
+ wifiMac
+ ssid
+ bssid
+ gateway
+ wifiNetmask
+ proxyInfo
+ dnsAddress
+ vpnIp
+ vpnNetmask
+ cellIp
+ networkType
+ root
+ timeZone
+ language
+ screenRes
+ fontHash
+ blueMac
+ androidId
+ cpuFrequency
+ cpuHardware
+ cpuType
+ totalMemory
+ availableMemory
+ totalStorage
+ availableStorage
+ basebandVersion
+ kernelVersion
+ allowmockLocation
+ idfa
+ idfv
+ manufacturer
+ model
+ mac
+ hasTelephone
+ bluetoothVersion
+ serialno
+ sdkVersion
+ uuid
+ algoversion
+ score
+ fpid
+ src
+
+ */
